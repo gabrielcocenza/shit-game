@@ -1,0 +1,5 @@
+arcade==2.1.6
+pyglet==1.4.8
+dataclasses==0.7
+pyglet-ffmpeg2==0.1.15
+ffmpeg==1.4
