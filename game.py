@@ -2,6 +2,7 @@ import arcade
 import random
 import os
 import threading
+import time
 
 COW_SCALING = 0.2
 GOAT_SCALING = 0.07
@@ -17,6 +18,7 @@ MOVEMENT_SPEED = 5
 
 
 class Player(arcade.Sprite):
+    name = None
 
     def update(self):
         self.center_x += self.change_x
@@ -34,7 +36,8 @@ class Player(arcade.Sprite):
 
 
 class Food(arcade.Sprite):
-    has_poop = False
+    food_exists = False
+
 
 
 class MyGame(arcade.Window):
@@ -54,9 +57,10 @@ class MyGame(arcade.Window):
         # Set up the player info
         self.player_sprite_1 = None
         self.player_sprite_2 = None
-        for number in range(LETTUCE_COUNT):
-            lettuce = 'lettuce_sprite_{}'.format(number)
-            self.lettuce = None
+        self.food_sprite = None
+        self.food_exists = None
+
+
         self.score_1 = 0
         self.score_2 = 0
 
@@ -78,7 +82,9 @@ class MyGame(arcade.Window):
 
         # Set up the player
         self.player_sprite_1 = Player("images/cow.png", COW_SCALING)
+        self.player_sprite_1.name = 'vaquinha'
         self.player_sprite_2 = Player("images/goat.png", GOAT_SCALING)
+        self.player_sprite_2.name = 'cabrinha'
         self.player_sprite_1.center_x = 0
         self.player_sprite_1.center_y = 0
         self.player_sprite_2.center_x = 800
@@ -87,14 +93,33 @@ class MyGame(arcade.Window):
         self.player_list.append(self.player_sprite_1)
         self.player_list.append(self.player_sprite_2)
 
+        self.food_exists
+        self.lock = threading.Lock()
+        # incio thread
+        self.thread = threading.Thread(target=self.food_timer)
+        self.thread.start()
 
         #Create Food
-        for number in range(LETTUCE_COUNT):
-            lettuce = 'lettuce_sprite_{}'.format(number)
-            self.lettuce = Food("images/lettuce.png", LETTUCE_SCALING)
-            self.lettuce.center_x = random.randrange(SCREEN_WIDTH)
-            self.lettuce.center_y = random.randrange(SCREEN_HEIGHT)
-            self.lettuce_list.append(self.lettuce)
+        # for number in range(LETTUCE_COUNT):
+        #     lettuce = 'lettuce_sprite_{}'.format(number)
+        #     self.lettuce = Food("images/lettuce.png", LETTUCE_SCALING)
+        #     self.lettuce.center_x = random.randrange(SCREEN_WIDTH)
+        #     self.lettuce.center_y = random.randrange(SCREEN_HEIGHT)
+        #     self.lettuce_list.append(self.lettuce)
+
+
+    def food_timer(self):
+        while True:
+            time.sleep(3)
+            with self.lock:
+                if not self.food_exists:                    
+                    self.food_exists = True
+            while True:
+                time.sleep(2)
+                with self.lock:
+                    if not self.food_exists:
+                        break
+
 
 
     def on_draw(self):
@@ -120,24 +145,63 @@ class MyGame(arcade.Window):
 
         # Call update on all sprites (The sprites don't do much in this
         # example though.)
-        self.player_list.update()
-        self.lettuce_list.update()
-        self.poop_list.update()
 
-        # Generate a list of all sprites that collided with the player.
-        cow_hit_list = arcade.check_for_collision_with_list(self.player_sprite_1, self.lettuce_list)
-        goat_hit_list = arcade.check_for_collision_with_list(self.player_sprite_2, self.lettuce_list)
-        # poop_hit_list = arcade.check_for_collision_with_list(self.lettuce_list, self.poop_list)
+        if not self.food_sprite:
+            with self.lock:
+                if self.food_exists:
+                    self.food_sprite = Food("images/lettuce.png", LETTUCE_SCALING)   
+                    self.food_sprite.center_x = random.randrange(SCREEN_WIDTH)
+                    self.food_sprite.center_y = random.randrange(SCREEN_HEIGHT)
+                    self.lettuce_list.append(self.food_sprite)
+        #
+        if self.food_sprite:    
+        
+            hit_list = arcade.check_for_collision_with_list(self.food_sprite,self.player_list)
+            
+            if len(hit_list):
+                if len(hit_list)==2:
+                    i = random.randint(0, 1)
+                    if i==0:
+                        self.score_1 += 1
+                        self.food_sprite.kill()
+                        self.food_sprite = None
+                        with self.lock:
+                            self.food_exists = False
+                    else:
+                        self.score_2 += 1
+                        self.food_sprite.kill()
+                        self.food_sprite = None
+                        with self.lock:
+                            self.food_exists = False
+                else:
+                    if hit_list[0].name=='vaquinha':
+                        self.score_1 += 1
+                        self.food_sprite.kill()
+                        self.food_sprite = None
+                        with self.lock:
+                            self.food_exists = False
+                    else:
+                        self.score_2 += 1
+                        self.food_sprite.kill()
+                        self.food_sprite = None
+                        with self.lock:
+                            self.food_exists = False
+
+        #
 
         # Loop through each colliding sprite, remove it, and add to the score.
-        for lettuce in cow_hit_list:
-            lettuce.remove_from_sprite_lists()
-            self.score_1 += 1
+        # for lettuce in cow_hit_list:
+        #     lettuce.remove_from_sprite_lists()
+        #     self.score_1 += 1
 
-        for lettuce in goat_hit_list:
-            lettuce.remove_from_sprite_lists()
-            self.score_2 += 1
+        # for lettuce in goat_hit_list:
+        #     lettuce.remove_from_sprite_lists()
+        #     self.score_2 += 1
 
+        self.player_list.update()
+        self.poop_list.update()
+        if self.food_sprite:
+            self.lettuce_list.update()
 
 
 
