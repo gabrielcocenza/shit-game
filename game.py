@@ -4,9 +4,8 @@ import os
 import threading
 
 COW_SCALING = 0.2
-WOLF_SCALING = 0.15
+GOAT_SCALING = 0.07
 LETTUCE_SCALING = 0.1
-BEEF_SCALING = 0.08
 POOP_SCALING = 0.1
 
 SCREEN_WIDTH = 800
@@ -34,15 +33,8 @@ class Player(arcade.Sprite):
             self.top = SCREEN_HEIGHT - 1
 
 
-class Poop(arcade.Sprite):
-     
-    def update(self):
-        if not self.player:
-            self.center_x = 400
-            self.center_y = 530
-        else:
-            self.center_x = self.player.center_x
-            self.center_y = self.player.center_y
+class Food(arcade.Sprite):
+    has_poop = False
 
 
 class MyGame(arcade.Window):
@@ -57,12 +49,14 @@ class MyGame(arcade.Window):
         # Variables that will hold sprite lists
         self.player_list = None
         self.lettuce_list = None
-        self.beef_list = None
         self.poop_list = None
 
         # Set up the player info
         self.player_sprite_1 = None
         self.player_sprite_2 = None
+        for number in range(LETTUCE_COUNT):
+            lettuce = 'lettuce_sprite_{}'.format(number)
+            self.lettuce = None
         self.score_1 = 0
         self.score_2 = 0
 
@@ -75,16 +69,16 @@ class MyGame(arcade.Window):
         # Sprite lists
         self.player_list = arcade.SpriteList()
         self.lettuce_list = arcade.SpriteList()
-        self.beef_list = arcade.SpriteList()
         self.poop_list = arcade.SpriteList()
 
         # Score
         self.score_1 = 0
         self.score_2 = 0
 
+
         # Set up the player
         self.player_sprite_1 = Player("images/cow.png", COW_SCALING)
-        self.player_sprite_2 = Player("images/wolf.png", WOLF_SCALING)
+        self.player_sprite_2 = Player("images/goat.png", GOAT_SCALING)
         self.player_sprite_1.center_x = 0
         self.player_sprite_1.center_y = 0
         self.player_sprite_2.center_x = 800
@@ -93,21 +87,14 @@ class MyGame(arcade.Window):
         self.player_list.append(self.player_sprite_1)
         self.player_list.append(self.player_sprite_2)
 
+
         #Create Food
-        for i in range(LETTUCE_COUNT):
-
-            lettuce = arcade.Sprite("images/lettuce.png", LETTUCE_SCALING)
-            beef = arcade.Sprite("images/beef.png", BEEF_SCALING)
-
-            # Position the food
-            lettuce.center_x = random.randrange(SCREEN_WIDTH)
-            lettuce.center_y = random.randrange(SCREEN_HEIGHT)
-            beef.center_x = random.randrange(SCREEN_WIDTH)
-            beef.center_y = random.randrange(SCREEN_HEIGHT)
-
-            # Add the coin to the lists
-            self.lettuce_list.append(lettuce)
-            self.beef_list.append(beef)
+        for number in range(LETTUCE_COUNT):
+            lettuce = 'lettuce_sprite_{}'.format(number)
+            self.lettuce = Food("images/lettuce.png", LETTUCE_SCALING)
+            self.lettuce.center_x = random.randrange(SCREEN_WIDTH)
+            self.lettuce.center_y = random.randrange(SCREEN_HEIGHT)
+            self.lettuce_list.append(self.lettuce)
 
 
     def on_draw(self):
@@ -118,15 +105,14 @@ class MyGame(arcade.Window):
         # This command has to happen before we start drawing
         arcade.start_render()
         self.lettuce_list.draw()
-        self.beef_list.draw()
         self.player_list.draw()
         self.poop_list.draw()
 
-        # Put the text on the screen.
+        
         score_cow = f"Score Cow: {self.score_1}"
-        score_wolf = f"Score Wolf: {self.score_2}"
+        score_goat = f"Score Goat: {self.score_2}"
         arcade.draw_text(score_cow, 10, 20, arcade.color.WHITE, 14)
-        arcade.draw_text(score_wolf, 650, 20, arcade.color.WHITE, 14)
+        arcade.draw_text(score_goat, 650, 20, arcade.color.WHITE, 14)
 
 
     def on_update(self, delta_time):
@@ -136,21 +122,23 @@ class MyGame(arcade.Window):
         # example though.)
         self.player_list.update()
         self.lettuce_list.update()
-        self.beef_list.update()
         self.poop_list.update()
 
         # Generate a list of all sprites that collided with the player.
         cow_hit_list = arcade.check_for_collision_with_list(self.player_sprite_1, self.lettuce_list)
-        wolf_hit_list = arcade.check_for_collision_with_list(self.player_sprite_2, self.beef_list)
+        goat_hit_list = arcade.check_for_collision_with_list(self.player_sprite_2, self.lettuce_list)
+        # poop_hit_list = arcade.check_for_collision_with_list(self.lettuce_list, self.poop_list)
 
         # Loop through each colliding sprite, remove it, and add to the score.
         for lettuce in cow_hit_list:
             lettuce.remove_from_sprite_lists()
             self.score_1 += 1
 
-        for beef in wolf_hit_list:
-            beef.remove_from_sprite_lists()
+        for lettuce in goat_hit_list:
+            lettuce.remove_from_sprite_lists()
             self.score_2 += 1
+
+
 
 
     def on_key_press(self, key, modifiers):
