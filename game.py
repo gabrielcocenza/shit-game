@@ -62,6 +62,8 @@ class MyGame(arcade.Window):
         self.score_1 = 0
         self.score_2 = 0
 
+        self.physics_engine_1 = None
+        self.physics_engine_2 = None
         arcade.set_background_color(arcade.color.AMAZON)
 
     def setup(self):
@@ -79,6 +81,9 @@ class MyGame(arcade.Window):
 
         self.player_sprite_2 = Player("images/goat.png", GOAT_SCALING)
         self.player_sprite_2.name = 'goat'
+
+        self.physics_engine_1 = arcade.PhysicsEngineSimple(self.player_sprite_1, self.poop_list)
+        self.physics_engine_2 = arcade.PhysicsEngineSimple(self.player_sprite_2, self.poop_list)
 
         self.player_sprite_1.center_x = 0
         self.player_sprite_1.center_y = 0
@@ -132,6 +137,9 @@ class MyGame(arcade.Window):
 
 
     def on_update(self, delta_time):
+
+        self.physics_engine_1.update()
+        self.physics_engine_2.update()
 
         if not self.food_sprite:
             with self.lock:
